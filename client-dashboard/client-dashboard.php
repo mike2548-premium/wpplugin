@@ -136,8 +136,16 @@ class Client_Dashboard {
      * Enqueue frontend assets
      */
     public function enqueue_frontend_assets() {
-        // Only load on client dashboard pages
-        if (is_page('client-dashboard') || (isset($_GET['client_dashboard']) && $_GET['client_dashboard'] == '1')) {
+        global $post;
+
+        // Check if current page has the shortcode
+        $has_shortcode = false;
+        if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'client_dashboard')) {
+            $has_shortcode = true;
+        }
+
+        // Also check for specific page slug or query parameter
+        if ($has_shortcode || is_page('client-dashboard') || (isset($_GET['client_dashboard']) && $_GET['client_dashboard'] == '1')) {
             wp_enqueue_style('client-dashboard-frontend', CLIENT_DASHBOARD_PLUGIN_URL . 'assets/css/frontend.css', array(), CLIENT_DASHBOARD_VERSION);
             wp_enqueue_script('client-dashboard-frontend', CLIENT_DASHBOARD_PLUGIN_URL . 'assets/js/frontend.js', array('jquery'), CLIENT_DASHBOARD_VERSION, true);
 
@@ -193,27 +201,140 @@ class Client_Dashboard {
      * Admin page callback
      */
     public function admin_page() {
+        // Handle page creation
+        if (isset($_POST['create_dashboard_page']) && check_admin_referer('cd_create_page')) {
+            $this->create_dashboard_page();
+            flush_rewrite_rules();
+            echo '<div class="notice notice-success"><p>' . __('Dashboard page created successfully!', 'client-dashboard') . '</p></div>';
+        }
+
+        // Handle permalink flush
+        if (isset($_POST['flush_permalinks']) && check_admin_referer('cd_flush_permalinks')) {
+            flush_rewrite_rules();
+            echo '<div class="notice notice-success"><p>' . __('Permalinks flushed successfully!', 'client-dashboard') . '</p></div>';
+        }
+
+        // Check if dashboard page exists
+        $page_id = get_option('client_dashboard_page_id');
+        $page_exists = false;
+        $page_url = '';
+
+        if ($page_id) {
+            $page = get_post($page_id);
+            if ($page && $page->post_status === 'publish') {
+                $page_exists = true;
+                $page_url = get_permalink($page_id);
+            }
+        }
+
         ?>
         <div class="wrap">
             <h1><?php _e('Client Dashboard', 'client-dashboard'); ?></h1>
-            <div class="card">
-                <h2><?php _e('Welcome to Client Dashboard', 'client-dashboard'); ?></h2>
-                <p><?php _e('This plugin provides a frontend dashboard for your clients to manage their content safely.', 'client-dashboard'); ?></p>
 
-                <h3><?php _e('Features', 'client-dashboard'); ?></h3>
-                <ul>
+            <!-- Shortcode Instructions -->
+            <div class="card" style="background: #e7f3ff; border-left: 4px solid #2271b1; padding: 20px; margin: 20px 0;">
+                <h2 style="margin-top: 0;"><?php _e('📋 Shortcode Usage', 'client-dashboard'); ?></h2>
+                <p style="font-size: 16px;"><?php _e('To display the client dashboard on any page, add this shortcode:', 'client-dashboard'); ?></p>
+                <div style="background: #fff; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 18px; margin: 15px 0;">
+                    <strong>[client_dashboard]</strong>
+                </div>
+                <p><?php _e('Copy and paste this shortcode into any page or post where you want the dashboard to appear.', 'client-dashboard'); ?></p>
+            </div>
+
+            <!-- Dashboard Page Status -->
+            <div class="card">
+                <h2><?php _e('Dashboard Page Status', 'client-dashboard'); ?></h2>
+                <?php if ($page_exists) : ?>
+                    <p style="color: #46b450; font-size: 16px;">
+                        <span class="dashicons dashicons-yes-alt" style="font-size: 20px;"></span>
+                        <?php _e('Dashboard page exists and is active!', 'client-dashboard'); ?>
+                    </p>
+                    <p>
+                        <strong><?php _e('Page URL:', 'client-dashboard'); ?></strong>
+                        <a href="<?php echo esc_url($page_url); ?>" target="_blank" style="font-size: 16px;">
+                            <?php echo esc_html($page_url); ?>
+                        </a>
+                    </p>
+                    <p>
+                        <a href="<?php echo admin_url('post.php?post=' . $page_id . '&action=edit'); ?>" class="button button-secondary">
+                            <?php _e('Edit Dashboard Page', 'client-dashboard'); ?>
+                        </a>
+                        <a href="<?php echo esc_url($page_url); ?>" class="button button-secondary" target="_blank">
+                            <?php _e('View Dashboard Page', 'client-dashboard'); ?>
+                        </a>
+                    </p>
+                <?php else : ?>
+                    <p style="color: #dc3232; font-size: 16px;">
+                        <span class="dashicons dashicons-warning" style="font-size: 20px;"></span>
+                        <?php _e('Dashboard page not found!', 'client-dashboard'); ?>
+                    </p>
+                    <p><?php _e('Click the button below to create a dashboard page automatically, or create a page manually and add the shortcode.', 'client-dashboard'); ?></p>
+                    <form method="post" style="margin: 15px 0;">
+                        <?php wp_nonce_field('cd_create_page'); ?>
+                        <button type="submit" name="create_dashboard_page" class="button button-primary button-large">
+                            <?php _e('Create Dashboard Page', 'client-dashboard'); ?>
+                        </button>
+                    </form>
+                <?php endif; ?>
+
+                <!-- Flush Permalinks -->
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+                    <h3><?php _e('Having Issues?', 'client-dashboard'); ?></h3>
+                    <p><?php _e('If you\'re getting a "Page not found" error, try flushing the permalinks:', 'client-dashboard'); ?></p>
+                    <form method="post">
+                        <?php wp_nonce_field('cd_flush_permalinks'); ?>
+                        <button type="submit" name="flush_permalinks" class="button button-secondary">
+                            <?php _e('Flush Permalinks', 'client-dashboard'); ?>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="card">
+                <h2><?php _e('Features', 'client-dashboard'); ?></h2>
+                <ul style="list-style: disc; padding-left: 25px; font-size: 15px;">
                     <li><?php _e('Create and manage posts from the frontend', 'client-dashboard'); ?></li>
                     <li><?php _e('Edit pages with Elementor integration', 'client-dashboard'); ?></li>
                     <li><?php _e('View Elementor form submissions', 'client-dashboard'); ?></li>
                     <li><?php _e('Media library management', 'client-dashboard'); ?></li>
                     <li><?php _e('Secure with custom capabilities', 'client-dashboard'); ?></li>
                 </ul>
+            </div>
 
-                <h3><?php _e('Getting Started', 'client-dashboard'); ?></h3>
-                <ol>
-                    <li><?php _e('Assign the "Client User" role to your client users', 'client-dashboard'); ?></li>
-                    <li><?php _e('Share the Client Dashboard page URL with your clients', 'client-dashboard'); ?></li>
-                    <li><?php printf(__('Dashboard URL: <strong>%s</strong>', 'client-dashboard'), home_url('/client-dashboard/')); ?></li>
+            <!-- Getting Started -->
+            <div class="card">
+                <h2><?php _e('Getting Started', 'client-dashboard'); ?></h2>
+                <ol style="font-size: 15px; line-height: 1.8;">
+                    <li>
+                        <strong><?php _e('Create a page:', 'client-dashboard'); ?></strong>
+                        <?php _e('Create a new page or use the button above to auto-create one', 'client-dashboard'); ?>
+                    </li>
+                    <li>
+                        <strong><?php _e('Add the shortcode:', 'client-dashboard'); ?></strong>
+                        <?php _e('Add [client_dashboard] shortcode to the page content', 'client-dashboard'); ?>
+                    </li>
+                    <li>
+                        <strong><?php _e('Create client users:', 'client-dashboard'); ?></strong>
+                        <?php _e('Go to Users → Add New and assign the "Client User" role', 'client-dashboard'); ?>
+                    </li>
+                    <li>
+                        <strong><?php _e('Share the URL:', 'client-dashboard'); ?></strong>
+                        <?php _e('Share the dashboard page URL with your clients', 'client-dashboard'); ?>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Manual Setup Instructions -->
+            <div class="card" style="background: #f9f9f9;">
+                <h2><?php _e('Manual Setup Instructions', 'client-dashboard'); ?></h2>
+                <p><?php _e('If the automatic page creation doesn\'t work, follow these steps:', 'client-dashboard'); ?></p>
+                <ol style="font-size: 15px; line-height: 1.8;">
+                    <li><?php _e('Go to Pages → Add New', 'client-dashboard'); ?></li>
+                    <li><?php _e('Title: "Client Dashboard" (or any name you prefer)', 'client-dashboard'); ?></li>
+                    <li><?php _e('Add the shortcode: <code>[client_dashboard]</code>', 'client-dashboard'); ?></li>
+                    <li><?php _e('Publish the page', 'client-dashboard'); ?></li>
+                    <li><?php _e('Go to Settings → Permalinks and click "Save Changes"', 'client-dashboard'); ?></li>
                 </ol>
             </div>
         </div>

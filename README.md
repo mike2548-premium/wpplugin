@@ -52,25 +52,61 @@ A comprehensive frontend dashboard for WordPress clients to manage posts, pages,
 
 ## 🎯 Getting Started
 
-### 1. Configure Settings
-Navigate to **Client Dashboard → Settings** and:
-- Enable/disable features (Posts, Pages, Media, Forms)
-- Set allowed post types
-- Configure permissions
+### Quick Setup (3 Steps)
 
-### 2. Create Client Users
+#### Step 1: Add the Shortcode to a Page
+
+The plugin uses a simple shortcode to display the dashboard. After activation:
+
+1. **Go to WordPress Admin → Client Dashboard**
+2. You'll see the shortcode prominently displayed in a blue box:
+   ```
+   [client_dashboard]
+   ```
+3. **Option A:** Click the **"Create Dashboard Page"** button to automatically create a page
+4. **Option B:** Manually create a page:
+   - Go to **Pages → Add New**
+   - Title: "Client Dashboard" (or any name you prefer)
+   - In the content editor, add: `[client_dashboard]`
+   - Click **Publish**
+
+> **📝 Important:** The shortcode `[client_dashboard]` can be added to ANY page. You're not limited to a page named "Client Dashboard."
+
+#### Step 2: Fix Permalinks (If You Get "Page Not Found")
+
+If you encounter a "Page not found" error after adding the shortcode:
+
+1. Go to **Client Dashboard** admin page
+2. Scroll to **"Having Issues?"** section
+3. Click the **"Flush Permalinks"** button
+
+**Alternative method:**
+- Go to **Settings → Permalinks**
+- Simply click **"Save Changes"** (you don't need to change anything)
+
+#### Step 3: Create Client Users
+
 1. Go to **Users → Add New**
-2. Fill in user details
-3. Select **"Client User"** as the role
-4. Click "Add New User"
+2. Fill in user details (username, email, etc.)
+3. In the **Role** dropdown, select **"Client User"**
+4. Click **"Add New User"**
+5. Share login credentials with your client
 
-### 3. Share Dashboard URL
-The client dashboard is automatically created at:
+### Your Dashboard is Ready! 🎉
+
+Once set up, your clients can access the dashboard at the URL of the page where you added the shortcode:
 ```
-https://yoursite.com/client-dashboard/
+Example: https://yoursite.com/your-page-slug/
 ```
 
-Share this URL with your clients along with their login credentials.
+The URL depends on the page title/slug where you added the `[client_dashboard]` shortcode.
+
+### Optional: Configure Settings
+
+Navigate to **Client Dashboard → Settings** to:
+- Enable/disable specific features (Posts, Pages, Media, Forms)
+- Set allowed post types
+- Customize permissions
 
 ## 📚 Usage
 
